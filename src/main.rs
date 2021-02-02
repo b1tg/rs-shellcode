@@ -7,9 +7,14 @@ pub const MEM_RESERVE: u32 = 0x2000;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 2 {
-        println!("Usage: ./rs_shellcode \"C:\\Users\\Admin\\Desktop\\calc64.raw\"");
+    if args.len() < 2 {
+        println!("Usage: ./rs_shellcode \"C:\\Users\\Admin\\Desktop\\calc64.raw\" [-b]");
         return;
+    }
+    let mut set_breakpoint = false;
+    if args.len() == 3 {
+        set_breakpoint = &args[2] == "-b";
+        println!("[*] Set breakpoint in debugger");
     }
     let fp = &args[1];
     // let fp = "C:\\Users\\Admin\\Desktop\\calc64.raw".to_owned();
@@ -33,5 +38,10 @@ fn main() {
     unsafe { std::ptr::copy_nonoverlapping(contents.as_ptr(), test_buf_ptr, flen) };
     println!("[*] Before jmp to shellcode");
 
-    unsafe { asm!("jmp {}",in(reg) test_buf) };
+    unsafe {
+        if set_breakpoint {
+            asm!("int 3");
+        }
+        asm!("jmp {}",in(reg) test_buf)
+    };
 }
