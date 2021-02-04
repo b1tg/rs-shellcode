@@ -73,9 +73,10 @@ fn main() {
     unsafe { std::ptr::copy_nonoverlapping(contents.as_ptr(), new_buf_ptr, flen) };
     println!("[*] Starting jmp to shellcode at offset 0x{:x}", offset);
     unsafe {
+        let jmp_target = new_buf.offset(offset as isize);
         if set_breakpoint {
             asm!("int 3");
         }
-        asm!("jmp {}",in(reg) new_buf.offset(offset as isize))
+        asm!("jmp {}",in(reg) jmp_target)
     };
 }
