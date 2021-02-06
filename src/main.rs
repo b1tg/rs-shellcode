@@ -1,13 +1,8 @@
 #![feature(asm)]
-#![feature(pattern)]
-
-// #![windows_subsystem = "windows"]
-use bindings::windows::win32::system_services::VirtualAlloc;
+//#![windows_subsystem = "windows"]
 use clap::{App, Arg};
-pub const PAGE_EXECUTE_READWRITE: u32 = 0x40;
-pub const MEM_COMMIT: u32 = 0x1000;
-pub const MEM_RESERVE: u32 = 0x2000;
-
+mod runner;
+use runner::run;
 fn main() {
     let matches = App::new("rs_shellcode")
         .arg(
@@ -29,7 +24,6 @@ fn main() {
                 .takes_value(true),
         )
         .get_matches();
-
     let set_breakpoint = matches.is_present("breakpoint");
     if set_breakpoint {
         println!("[*] Breakpoint flag set!");
@@ -48,35 +42,5 @@ fn main() {
     };
     println!("[*] Reading shellcode from path: {:?}", fp.clone());
     let contents = std::fs::read(fp).unwrap();
-    let flen = contents.len();
-
-    if flen as u64 <= offset {
-        println!(
-            "[*] Offset too big, offset: {}, file length: {}",
-            offset, flen
-        );
-        return;
-    }
-    let new_buf = unsafe {
-        VirtualAlloc(
-            std::ptr::null_mut(),
-            flen,
-            MEM_COMMIT | MEM_RESERVE,
-            PAGE_EXECUTE_READWRITE,
-        )
-    };
-    if new_buf == std::ptr::null_mut() {
-        println!("[*] Failed to allocate memory");
-        return;
-    }
-    let new_buf_ptr: *mut u8 = new_buf as *mut u8 as _;
-    unsafe { std::ptr::copy_nonoverlapping(contents.as_ptr(), new_buf_ptr, flen) };
-    println!("[*] Starting jmp to shellcode at offset 0x{:x}", offset);
-    unsafe {
-        let jmp_target = new_buf.offset(offset as isize);
-        if set_breakpoint {
-            asm!("int 3");
-        }
-        asm!("jmp {}",in(reg) jmp_target)
-    };
+    run(&contents, offset, set_breakpoint);
 }
