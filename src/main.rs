@@ -47,12 +47,18 @@ fn main() {
         _ => 0,
     };
     println!("[*] Reading shellcode from path: {:?}", fp.clone());
-    let contents = std::fs::read(fp).unwrap();
+    let contents = match std::fs::read(fp) {
+        Ok(res) => res,
+        Err(e) => {
+            println!("[-] Reading shellcode error: {}", e);
+            return;
+        }
+    };
     let flen = contents.len();
 
     if flen as u64 <= offset {
         println!(
-            "[*] Offset too big, offset: {}, file length: {}",
+            "[-] Offset too big, offset: {}, file length: {}",
             offset, flen
         );
         return;
@@ -66,7 +72,7 @@ fn main() {
         )
     };
     if new_buf == std::ptr::null_mut() {
-        println!("[*] Failed to allocate memory");
+        println!("[-] Failed to allocate memory");
         return;
     }
     let new_buf_ptr: *mut u8 = new_buf as *mut u8 as _;
