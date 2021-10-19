@@ -77,7 +77,10 @@ fn main() {
     }
     let new_buf_ptr: *mut u8 = new_buf as *mut u8 as _;
     unsafe { std::ptr::copy_nonoverlapping(contents.as_ptr(), new_buf_ptr, flen) };
-    println!("[*] Starting jmp to shellcode at offset 0x{:x}", offset);
+    println!(
+        "[*] Starting jmp to shellcode at offset 0x{:x} (base virtual address: {:p})",
+        offset, new_buf_ptr
+    );
     unsafe {
         let jmp_target = new_buf.offset(offset as isize);
         if set_breakpoint {
